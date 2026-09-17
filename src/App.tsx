@@ -1,11 +1,19 @@
 import { useMemo, useState } from 'react'
 import AddressBar from './components/AddressBar'
+import BaselinePanel from './components/BaselinePanel'
 import SegmentDetail from './components/SegmentDetail'
 import SegmentTable from './components/SegmentTable'
 import SummaryCards from './components/SummaryCards'
+import {
+  clearBaselineStorage,
+  comparePlans,
+  createSnapshot,
+  loadBaseline,
+  saveBaseline,
+} from './lib/baseline'
 import { downloadJson } from './lib/exporter'
 import { plan } from './lib/planner'
-import type { RequirementInput, ReservedInput } from './lib/types'
+import type { PlanSnapshot, RequirementInput, ReservedInput } from './lib/types'
 
 let counter = 0
 function uid(): string {
@@ -29,11 +37,40 @@ export default function App() {
   const [reservations, setReservations] = useState<ReservedInput[]>([])
   const [requirements, setRequirements] = useState<RequirementInput[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  const [baseline, setBaseline] = useState<PlanSnapshot | null>(() => loadBaseline())
 
   const result = useMemo(
     () => plan({ parentCidr, reservations, requirements }),
     [parentCidr, reservations, requirements],
   )
+
+  // 输入非法时保留基线但暂停对比；当前规划无输入错误时才生成快照并比较
+  const inputInvalid = result.inputErrors.length > 0
+  const currentSnapshot = useMemo(
+    () => (baseline && !inputInvalid ? createSnapshot({ parentCidr, reservations, requirements }, result) : null),
+    // result 已由 parentCidr/reservations/requirements 派生，随输入变化而更新
+    [baseline, inputInvalid, result],
+  )
+  const diff = useMemo(
+    () => (baseline && currentSnapshot ? comparePlans(baseline, currentSnapshot) : null),
+    [baseline, currentSnapshot],
+  )
+  const diffByRefId = useMemo(
+    () => (diff ? new Map(diff.items.map((d) => [d.id, d])) : undefined),
+    [diff],
+  )
+
+  function handleSaveBaseline() {
+    if (result.inputErrors.length > 0) return
+    const snap = createSnapshot({ parentCidr, reservations, requirements }, result)
+    saveBaseline(snap)
+    setBaseline(snap)
+  }
+
+  function handleClearBaseline() {
+    clearBaselineStorage()
+    setBaseline(null)
+  }
 
   // 重新规划后，选中索引可能失效（保留上一次仍在范围内的选择）
   const safeSelected =
@@ -251,6 +288,15 @@ export default function App() {
         </div>
       </div>
 
+      <BaselinePanel
+        baseline={baseline}
+        canSave={!inputInvalid && result.parentSize > 0}
+        diff={diff}
+        inputInvalid={inputInvalid}
+        onSave={handleSaveBaseline}
+        onClear={handleClearBaseline}
+      />
+
       {result.segments.length > 0 && (
         <div className="panel">
           <h2>网段明细（点击行查看/高亮）</h2>
@@ -258,6 +304,7 @@ export default function App() {
             segments={result.segments}
             selectedIndex={safeSelected}
             onSelect={setSelectedIndex}
+            diffByRefId={diffByRefId}
           />
         </div>
       )}

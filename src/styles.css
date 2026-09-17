@@ -368,3 +368,163 @@ tr.selected {
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* ---------- 基线对比 ---------- */
+.baseline-panel {
+  margin-top: 4px;
+}
+
+.baseline-meta {
+  margin: 10px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.baseline-paused {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  color: #fcd34d;
+  font-size: 13px;
+}
+
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.diff-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.chip.added,
+.chip.allocated {
+  background: rgba(52, 211, 153, 0.16);
+  color: var(--auto);
+  border-color: rgba(52, 211, 153, 0.4);
+}
+
+.chip.removed,
+.chip.unallocated {
+  background: rgba(248, 113, 113, 0.14);
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.chip.migrated {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--accent);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.chip.unchanged {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--muted);
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.badge.kind-reserved {
+  background: rgba(245, 158, 11, 0.18);
+  color: var(--reserved);
+}
+.badge.kind-fixed {
+  background: rgba(167, 139, 250, 0.18);
+  color: var(--fixed);
+}
+.badge.kind-auto {
+  background: rgba(52, 211, 153, 0.18);
+  color: var(--auto);
+}
+
+.addr-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.addr-stat {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.addr-stat .v {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.addr-stat .k {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.addr-stat .ranges {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diff-table .cell-sub {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.diff-table td.note {
+  white-space: normal;
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 160px;
+}
+
+td.grow {
+  color: var(--auto);
+}
+
+td.shrink {
+  color: var(--danger);
+}
+
+tr.diff-added td,
+tr.diff-allocated td {
+  background: rgba(52, 211, 153, 0.07);
+}
+
+tr.diff-removed td {
+  background: rgba(248, 113, 113, 0.07);
+}
+
+tr.diff-migrated td {
+  background: rgba(56, 189, 248, 0.07);
+}
+
+tr.diff-unallocated td {
+  background: rgba(248, 113, 113, 0.07);
+}
+
+tr.clickable.diff-added:hover td,
+tr.clickable.diff-allocated:hover td,
+tr.clickable.diff-removed:hover td,
+tr.clickable.diff-migrated:hover td,
+tr.clickable.diff-unallocated:hover td {
+  filter: brightness(1.12);
+}
+
+/* 选中行高亮需作用到单元格，覆盖对比行底色 */
+tr.selected td {
+  background: rgba(56, 189, 248, 0.14);
+}

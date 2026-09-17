@@ -23,6 +23,7 @@ interface Interval {
 
 interface Occupied extends Interval {
   kind: 'reserved' | 'fixed' | 'auto'
+  refId: string
   name: string
   prefix: number
   network: number
@@ -77,6 +78,7 @@ function toSegment(oc: Occupied): Segment {
     oc.requestedHosts !== undefined ? Math.max(0, usable - oc.requestedHosts) : 0
   return {
     kind: oc.kind,
+    refId: oc.refId,
     name: oc.name,
     cidr: formatCidr(oc.network, oc.prefix),
     prefix: oc.prefix,
@@ -238,6 +240,7 @@ export function plan(input: PlannerInput): PlanResult {
   for (const { item, parsed } of reservedItems) {
     occupied.push({
       kind: 'reserved',
+      refId: item.id,
       name: item.name || formatCidr(parsed.network, parsed.prefix),
       prefix: parsed.prefix,
       network: parsed.network,
@@ -248,6 +251,7 @@ export function plan(input: PlannerInput): PlanResult {
   for (const { req, parsed, hosts } of fixedItems) {
     occupied.push({
       kind: 'fixed',
+      refId: req.id,
       name: req.name || formatCidr(parsed.network, parsed.prefix),
       prefix: parsed.prefix,
       network: parsed.network,
@@ -314,6 +318,7 @@ export function plan(input: PlannerInput): PlanResult {
 
     occupied.push({
       kind: 'auto',
+      refId: req.id,
       name: label,
       prefix,
       network: placed.start,

@@ -8,7 +8,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "esbuild scripts/smoke.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/smoke.mjs && node node_modules/.cache/smoke.mjs"
+    "test": "esbuild scripts/smoke.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/smoke.mjs && node node_modules/.cache/smoke.mjs && esbuild scripts/baseline-test.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/baseline-test.mjs && node node_modules/.cache/baseline-test.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
