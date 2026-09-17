@@ -27,6 +27,7 @@ interface Occupied extends Interval {
   prefix: number
   network: number
   requestedHosts?: number
+  ownerId?: string
 }
 
 interface Gap extends Interval {
@@ -90,6 +91,7 @@ function toSegment(oc: Occupied): Segment {
     usable,
     waste,
     requestedHosts: oc.requestedHosts,
+    ownerId: oc.ownerId,
   }
 }
 
@@ -243,6 +245,7 @@ export function plan(input: PlannerInput): PlanResult {
       network: parsed.network,
       start: parsed.network,
       end: parsed.broadcast,
+      ownerId: item.id,
     })
   }
   for (const { req, parsed, hosts } of fixedItems) {
@@ -254,6 +257,7 @@ export function plan(input: PlannerInput): PlanResult {
       start: parsed.network,
       end: parsed.broadcast,
       requestedHosts: hosts,
+      ownerId: req.id,
     })
   }
 
@@ -320,6 +324,7 @@ export function plan(input: PlannerInput): PlanResult {
       start: placed.start,
       end: placed.start + size - 1,
       requestedHosts: hosts,
+      ownerId: req.id,
     })
   }
 

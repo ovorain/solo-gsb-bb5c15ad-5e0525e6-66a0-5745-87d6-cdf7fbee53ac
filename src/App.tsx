@@ -1,11 +1,19 @@
 import { useMemo, useState } from 'react'
 import AddressBar from './components/AddressBar'
+import BaselinePanel from './components/BaselinePanel'
 import SegmentDetail from './components/SegmentDetail'
 import SegmentTable from './components/SegmentTable'
 import SummaryCards from './components/SummaryCards'
+import {
+  buildBaseline,
+  clearStoredBaseline,
+  compareWithBaseline,
+  loadBaseline,
+  saveBaseline,
+} from './lib/baseline'
 import { downloadJson } from './lib/exporter'
 import { plan } from './lib/planner'
-import type { RequirementInput, ReservedInput } from './lib/types'
+import type { Baseline, RequirementInput, ReservedInput } from './lib/types'
 
 let counter = 0
 function uid(): string {
@@ -29,11 +37,41 @@ export default function App() {
   const [reservations, setReservations] = useState<ReservedInput[]>([])
   const [requirements, setRequirements] = useState<RequirementInput[]>([])
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
+  // 基线只存在于当前浏览器会话（sessionStorage），挂载时恢复
+  const [baseline, setBaseline] = useState<Baseline | null>(() => loadBaseline())
 
   const result = useMemo(
     () => plan({ parentCidr, reservations, requirements }),
     [parentCidr, reservations, requirements],
   )
+
+  // 输入非法时保留基线但暂停对比
+  const comparison = useMemo(
+    () =>
+      baseline && result.inputErrors.length === 0 && result.segments.length > 0
+        ? compareWithBaseline(baseline, result)
+        : null,
+    [baseline, result],
+  )
+
+  function handleSaveBaseline() {
+    if (result.inputErrors.length > 0 || result.segments.length === 0) return
+    const snapshot = buildBaseline(result)
+    setBaseline(snapshot)
+    saveBaseline(snapshot)
+  }
+
+  function handleClearBaseline() {
+    setBaseline(null)
+    clearStoredBaseline()
+  }
+
+  // 网段明细表使用的 需求ID -> 变化 映射
+  const changesById = useMemo(() => {
+    if (!comparison) return undefined
+    const map = new Map(comparison.rows.map((r) => [r.id, r]))
+    return map
+  }, [comparison])
 
   // 重新规划后，选中索引可能失效（保留上一次仍在范围内的选择）
   const safeSelected =
@@ -251,13 +289,30 @@ export default function App() {
         </div>
       </div>
 
+      <BaselinePanel
+        baseline={baseline}
+        result={result}
+        comparison={comparison}
+        onSave={handleSaveBaseline}
+        onClear={handleClearBaseline}
+      />
+
       {result.segments.length > 0 && (
         <div className="panel">
-          <h2>网段明细（点击行查看/高亮）</h2>
+          <h2>
+            网段明细（点击行查看/高亮）
+            {baseline && comparison && (
+              <span className="baseline-meta mono">
+                基线 {baseline.parentCidr}（{comparison.baseline.createdAt.slice(0, 10)}）→ 当前{' '}
+                {result.parentCidr}
+              </span>
+            )}
+          </h2>
           <SegmentTable
             segments={result.segments}
             selectedIndex={safeSelected}
             onSelect={setSelectedIndex}
+            changesById={changesById}
           />
         </div>
       )}

@@ -38,6 +38,8 @@ export interface Segment {
   requestedHosts?: number
   /** 自动分配失败时的原因 */
   reason?: string
+  /** 关联的需求 ID（fixed/auto）或保留区 ID（reserved），用于基线对比 */
+  ownerId?: string
 }
 
 export interface FailureItem {
@@ -74,4 +76,87 @@ export interface PlannerInput {
   parentCidr: string
   reservations: ReservedInput[]
   requirements: RequirementInput[]
+}
+
+/** 基线快照中的单个需求（按稳定 ID 参与对比） */
+export interface BaselineEntry {
+  id: string
+  name: string
+  /** 基线时的分配状态：已分配（固定/自动网段）或分配失败（未分配） */
+  state: 'allocated' | 'unallocated'
+  /** 已分配时的网段 CIDR */
+  cidr?: string
+  /** 已分配时的网络地址（数值） */
+  start?: number
+  /** 已分配时的广播地址（数值，含） */
+  end?: number
+  prefix?: number
+  capacity?: number
+  usable?: number
+  hosts?: number
+  kind?: 'fixed' | 'auto'
+  /** 未分配时的失败原因 */
+  reason?: string
+}
+
+/** 保存于当前浏览器会话的基线 */
+export interface Baseline {
+  createdAt: string
+  parentCidr: string
+  parentStart: number
+  parentEnd: number
+  parentSize: number
+  entries: BaselineEntry[]
+  /** 基线时点的全部占用区间（保留+固定+自动，已合并去重） */
+  occupiedRanges: AddrRange[]
+}
+
+/** 需求级变化类型 */
+export type ChangeType =
+  | 'added' // 基线中不存在该需求
+  | 'removed' // 基线中存在、当前已删除
+  | 'unchanged' // 网段与容量均未变
+  | 'resized' // CIDR 未变、容量变化（扩容/缩容）
+  | 'migrated' // CIDR 改变（迁移），可能同时扩容/缩容
+  | 'unallocated' // 基线已分配、当前分配失败（未分配）
+  | 'recovered' // 基线分配失败、当前已分配（恢复分配）
+  | 'still-unallocated' // 基线与当前均分配失败
+
+export interface ChangeRow {
+  type: ChangeType
+  id: string
+  name: string
+  /** 容量变化方向（迁移时容量同时变化也会标记） */
+  resize?: 'grow' | 'shrink'
+  hosts?: number
+  baseline?: BaselineEntry
+  current?: BaselineEntry
+}
+
+export interface AddrRange {
+  start: number
+  end: number
+}
+
+export interface DiffSummary {
+  /** 新占用：基线空闲、当前被占用的地址区间 */
+  occupied: AddrRange[]
+  /** 释放：基线占用、当前变回空闲的地址区间 */
+  released: AddrRange[]
+  /** 仍占用：两个时点都被占用的地址区间（重叠已合并去重） */
+  still: AddrRange[]
+  occupiedCount: number
+  releasedCount: number
+  stillCount: number
+  /** 净地址变化 = 新占用 - 释放（正数表示占用增加） */
+  net: number
+}
+
+export interface BaselineComparison {
+  baseline: Baseline
+  rows: ChangeRow[]
+  counts: Record<ChangeType, number>
+  summary: DiffSummary
+  /** 当前相对基线是否有任何差异 */
+  hasChanges: boolean
 }
